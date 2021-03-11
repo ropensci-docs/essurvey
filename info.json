@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "3194b6c145f0822123e6f50b1e2866f63b6de260",
+    "author": "Jorge Cimentada <cimentadaj@gmail.com>",
+    "time": "2021-03-11 19:00:17",
+    "files": 2,
+    "merge": false,
+    "message": "Adds devel version in DESCRIPTION\n"
+  },
+  "remote": "https://github.com/ropensci/essurvey",
+  "pkg": "essurvey"
+}
