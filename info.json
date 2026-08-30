@@ -1,0 +1,13 @@
+{
+  "commit": {
+    "commit": "b2d05a3a89120e15c0a0bea635ec1884adacb17d",
+    "author": "Jorge Cimentada <cimentadaj@gmail.com>",
+    "time": "2022-01-10T11:13:58Z",
+    "files": 1,
+    "merge": false,
+    "message": "Update NEWS.md"
+  },
+  "repo": "https://github.com/ropensci/essurvey",
+  "pkg": "essurvey",
+  "time": "2026-08-30T07:39:35Z"
+}

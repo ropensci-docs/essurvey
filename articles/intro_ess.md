@@ -1,0 +1,243 @@
+# Introduction to the essurvey package
+
+## Introduction
+
+Using the `essurvey` package is fairly easy. There are are two main
+families of functions: `import_*` and `show_*`. They each complement
+each other and allow the user to almost never have to go to the European
+Social Survey (ESS) website. The only scenario where you need to enter
+the ESS website is to validate your email. If you haven’t registered,
+create an account at <http://www.europeansocialsurvey.org/user/new>. For
+those unfamiliar with the ESS, this vignette uses the term rounds, here
+a synonym of waves to denote the same survey in different time points.
+
+Once you register visit your email account to validate the account and
+you’re ready to access the data.
+
+Given that some `essurvey` functions require your email address, this
+vignette will use a fake email but everything should work accordingly if
+you registered with the ESS.
+
+## Downloading country specific rounds
+
+Note: versions less than and including `essurvey 1.0.1` returned wrong
+countries. Please install the latest CRAN/Github version.
+
+To install and load development version of the package use:
+
+``` r
+
+# install.packages("devtools")
+devtools::install_github("ropensci/essurvey")
+```
+
+to install the stable version from CRAN use:
+
+``` r
+
+install.packages("essurvey")
+```
+
+Downloading the ESS data requires validating your email every time you
+download data. We can set our email as an environment variable with
+`set_email`.
+
+``` r
+
+set_email("your@email.com")
+```
+
+Once that’s executed you can delete the previous line and any `import_*`
+call will look for the email automatically, stored as an environment
+variable.
+
+Let’s suppose you don’t know which countries or rounds are available for
+the ESS. Then the `show_*` family of functions is your friend.
+
+To find out which countries have participated you can use
+[`show_countries()`](https://docs.ropensci.org/essurvey/reference/show_countries.md)
+
+``` r
+
+show_countries()
+```
+
+    ##  [1] "Albania"            "Austria"            "Belgium"           
+    ##  [4] "Bulgaria"           "Croatia"            "Cyprus"            
+    ##  [7] "Czechia"            "Denmark"            "Estonia"           
+    ## [10] "Finland"            "France"             "Germany"           
+    ## [13] "Greece"             "Hungary"            "Iceland"           
+    ## [16] "Ireland"            "Israel"             "Italy"             
+    ## [19] "Kosovo"             "Latvia"             "Lithuania"         
+    ## [22] "Luxembourg"         "Montenegro"         "Netherlands"       
+    ## [25] "Norway"             "Poland"             "Portugal"          
+    ## [28] "Romania"            "Russian Federation" "Serbia"            
+    ## [31] "Slovakia"           "Slovenia"           "Spain"             
+    ## [34] "Sweden"             "Switzerland"        "Turkey"            
+    ## [37] "Ukraine"            "United Kingdom"
+
+This function actually looks up the countries in the ESS website. If new
+countries enter, this will automatically grab those countries as well.
+Let’s check out Turkey. How many rounds has Turkey participated in? We
+can use
+[`show_country_rounds()`](https://docs.ropensci.org/essurvey/reference/show_country_rounds.md)
+
+``` r
+
+tk_rnds <- show_country_rounds("Turkey")
+tk_rnds
+```
+
+    ## [1] 2 4
+
+Note that country names are case sensitive. Use the exact name printed
+out by
+[`show_countries()`](https://docs.ropensci.org/essurvey/reference/show_countries.md)
+
+Using this information, we can download those specific rounds easily
+with `import_country`. Since `essurvey 1.0.0` all `ess_*` functions have
+been deprecated in favor of the `import_*` and `download_*` functions.
+
+``` r
+
+turkey <-
+  import_country(
+    country = "Turkey",
+    rounds = c(2, 4)
+    )
+```
+
+`turkey` will now be a list of `length(rounds)` containing a data frame
+for each round. If you only specified one round, then all `import_*`
+functions return a data frame. `import_country` is useful for when you
+want to download specific rounds, but not all. To download all rounds
+for a country automatically you can use `import_all_cntrounds`.
+
+``` r
+
+import_all_cntrounds("Turkey")
+```
+
+The `import_*` family is concerned with downloading the data and thus
+always returns a list containing data frames unless only one round is
+specified, in which it returns a `tibble`. Conversely, the `show_*`
+family grabs information from the ESS website and always returns
+vectors.
+
+## Download complete rounds
+
+Similarly, we can use other functions to download rounds. To see which
+rounds are currently available, use `show_rounds`.
+
+``` r
+
+show_rounds()
+```
+
+    ## [1] 1 2 3 4 5 6 7 8 9
+
+Similar to `show_countries`, `show_rounds` interactively looks up rounds
+in the ESS website, so any future rounds will automatically be included.
+
+To download all available rounds, use `import_all_rounds`
+
+``` r
+
+all_rounds <- import_all_rounds()
+```
+
+Alternatively, use `import_rounds` for selected ones.
+
+``` r
+
+selected_rounds <- import_rounds(c(1, 3, 6))
+```
+
+## Downloading data for Stata, SPSS and SAS users
+
+All `import_*` functions have an equivalent `download_*` function that
+allows the user to save the datasets in a specified folder in `'stata'`,
+`'spss'` or `'sas'` formats.
+
+For example, to save round two from Turkey in a folder called
+`./my_folder`, we use:
+
+``` r
+
+download_country("Turkey", 2,
+                 output_dir = "./myfolder/")
+```
+
+By default it saves the data as `'stata'` files. Alternatively you can
+use `'spss'` or `'sas'`.
+
+``` r
+
+download_country("Turkey", 2,
+                 output_dir = "./myfolder/",
+                 format = 'sas')
+```
+
+This will save the data to `./myfolder/ESS_Turkey` and inside that
+folder there will be the `ESS2` folder that contains the data.
+
+## Correcting for missing values
+
+Whenever you download the ESS data, it comes together with a script that
+recodes the values 6 = ‘Not applicable’, 7 = ‘Refusal’, 8 = ‘Don’t
+know’, 9 = ‘No answer’ and 9 = ‘Not available’ as missings. However,
+that is the case for variables that have a scaling of 1-5. For variables
+which have a scaling from 1-10 the corresponding missings are 66, 77,
+and so on. At first glance new users might not know this and start
+calculating statistics with these variables such as…
+
+``` r
+
+sp <- import_country("Spain", 1)
+mean(sp$tvtot)
+# 4.622406
+```
+
+..but that vector contains numbers such as `66`, `77`, that shouldn’t be
+there.
+[`recode_missings()`](https://docs.ropensci.org/essurvey/reference/recode_missings.md)
+removes the corresponding missings for numeric variables as well as for
+character variables. It accepts the complete `tibble` and recodes all
+variables that should be recoded.
+
+``` r
+
+new_coding <- recode_missings(sp)
+mean(new_coding$tvtot, na.rm = TRUE)
+# 4.527504
+```
+
+It also gives you the option of recoding only specific categories. For
+example…
+
+``` r
+
+other_newcoding <- recode_missings(sp, c("Don't know", "Refusal"))
+table(other_newcoding$tvpol)
+#  0   1   2   3   4   5   6   7  66 
+# 167 460 610 252  95  36  26  31  45 
+```
+
+…still has missing values but recoded the ones that were specified. I
+strongly suggest the user not to recode these categories as missing
+without looking at the data as there might be substantial differences
+between people who didn’t and who did answer questions. If the user is
+decided to do so, use `recode_missings` to recode everything and the
+corresponding `recode_*_missings` functions for numeric and character
+recodings separately. See the documentation of
+[`?recode_missings`](https://docs.ropensci.org/essurvey/reference/recode_missings.md)
+for more information.
+
+## Analyzing ESS data
+
+Be aware that for analyzing data from the ESS survey you should take
+into consideration the sampling and weights of the survey. The
+[survey](http://r-survey.r-forge.r-project.org/survey/) package provides
+very good support for this. A useful example comes from the work of
+Anthony Damico and Daniel Oberski
+[here](http://asdfree.com/european-social-survey-ess.md).
